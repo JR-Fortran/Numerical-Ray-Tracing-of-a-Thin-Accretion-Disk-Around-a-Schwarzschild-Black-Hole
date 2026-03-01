@@ -44,7 +44,7 @@ These are the ones you'll likely tweak first:
 
 ### Requirements
 - A Fortran compiler supporting Fortran 95 and `iso_fortran_env`
-- Tested with **gfortran** on macOS and Linux
+- Tested with **gfortran** on macOS.
 
 ### macOS (gfortran via Homebrew)
 
