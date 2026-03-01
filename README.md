@@ -136,4 +136,4 @@ Astronomy and Astrophysics, 75, 228–235 (1979).
 ## Feedback
 
 If you find any inconsistencies or have questions, please feel free to email me at
-[your.email@example.com](mailto:your.email@example.com).
+[your.email@example.com](mailto:lars.rosengren@ou.ac.uk).
