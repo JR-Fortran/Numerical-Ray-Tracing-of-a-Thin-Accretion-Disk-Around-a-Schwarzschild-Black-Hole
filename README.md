@@ -65,6 +65,8 @@ gfortran -O2 -o raytrace schwarzschild_physics.f95 camera.f95 disk.f95 DP54.f95 
 
 ### Linux (gfortran)
 
+**NOTE!** I have not tested this on linux.
+
 1. Install gfortran:
 ```bash
 sudo apt install gfortran   # Debian/Ubuntu
