@@ -73,13 +73,31 @@ sudo dnf install gcc-gfortran   # Fedora
 
 2. Compile and run as above.
 
+### Windows
+
+The easiest route on Windows is to use **gfortran via MSYS2**.
+
+1. Install [MSYS2](https://www.msys2.org/) and open the **MSYS2 MINGW64** terminal.
+
+2. Install gfortran:
+```bash
+pacman -S mingw-w64-x86_64-gcc-fortran
+```
+
+3. Compile:
+```bash
+gfortran -O2 -o raytrace schwarzschild_physics.f95 camera.f95 disk.f95 DP54.f95 render_shadow.f95 main.f95
+```
+
+4. Run:
+```bash
+./raytrace
+```
+
 ### Output
 
 The renderer writes `disk.ppm` (binary P6 PPM) to the working directory.
-This can be opened directly in Preview (macOS), GIMP, or converted with ImageMagick:
-```bash
-convert disk.ppm disk.png
-```
+This can be opened directly in Preview (macOS) or GIMP.
 
 ---
 
@@ -99,7 +117,12 @@ convert disk.ppm disk.png
 
 ## Example Output
 
-*(Add your render images here)*
+![r_obs set to 150 with adjusted colouring](Images/Unknown.png)
+![r_obs set to 150 ](Images/disk_color copy 4.png)
+![r_obs set to 80 ](Images/disk_color copy 5.png)
+
+**If you generate multiple images you can stitch them together into a GIF.**
+![r_obs set to 80 ](Images/output.gif)
 
 ---
 
