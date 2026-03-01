@@ -118,8 +118,8 @@ This can be opened directly in Preview (macOS) or GIMP.
 ## Example Output
 
 ![r_obs set to 150 with adjusted colouring](Images/Unknown.png)
-![r_obs set to 150 ](Images/disk_color_copy_4.png)
-![r_obs set to 80 ](Images/disk_color_copy_5.png)
+![r_obs set to 150 ](Images/"disk_color copy 4.png")
+![r_obs set to 80 ](Images/"disk_color copy 5.png")
 
 **If you generate multiple images you can stitch them together into a GIF.**
 ![r_obs set to 80 ](Images/output.gif)
