@@ -137,6 +137,7 @@ So just give it some time.
 
 J.-P. Luminet, *Image of a Spherical Black Hole with Thin Accretion Disk*,
 Astronomy and Astrophysics, 75, 228–235 (1979).
+https://ui.adsabs.harvard.edu/abs/1979A%26A....75..228L/abstract
 
 ---
 
