@@ -8,7 +8,6 @@ This project numerically ray-traces null geodesics in the Schwarzschild spacetim
 
 Key controls you’ll likely tweak first:
 
-<img width="665" height="645" alt="Theta" src="https://github.com/user-attachments/assets/ffb6fd95-6429-4e84-a902-1732416a681b" />
 - `theta_deg` — camera polar angle (tilt / elevation)
 - `phi_deg` — camera azimuth angle (rotation around the black hole)
 - `nx`, `ny` — output image resolution (width × height)
