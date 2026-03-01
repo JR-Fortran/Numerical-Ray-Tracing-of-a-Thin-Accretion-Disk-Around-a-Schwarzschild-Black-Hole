@@ -118,7 +118,8 @@ This can be opened directly in Preview (macOS) or GIMP.
 ---
 
 ## Example Output
-
+**Run-Time** Depending on your hardware this can take a few minuits to run. There is currently no print out to tell you how far the program has gotten (This will be added).
+So just give it some time.
 ![r_obs set to 150 with adjusted colouring](Images/Unknown.png)
 **r_obs set to 150 with adjusted colouring**
 ![r_obs set to 150 ](Images/disk_color_copy_4.png)
