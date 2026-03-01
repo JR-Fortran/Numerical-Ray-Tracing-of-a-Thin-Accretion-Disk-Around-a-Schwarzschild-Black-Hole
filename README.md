@@ -17,7 +17,7 @@ a frequency-shift factor g, with observed luminance scaling as L ∝ I_em × g�
 The equations of motion are integrated adaptively using a **Dormand–Prince RK5(4)** stepper
 with FSAL reuse.
 
-Please read the file named Documentation.pdf
+For a full technical write-up of the physics and implementation, see Documentation.pdf
 
 ---
 
