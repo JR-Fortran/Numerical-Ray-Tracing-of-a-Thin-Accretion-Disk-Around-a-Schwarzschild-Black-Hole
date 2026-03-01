@@ -17,6 +17,8 @@ a frequency-shift factor g, with observed luminance scaling as L ∝ I_em × g�
 The equations of motion are integrated adaptively using a **Dormand–Prince RK5(4)** stepper
 with FSAL reuse.
 
+Please read the file named Documentation.pdf
+
 ---
 
 ## Key Parameters
@@ -65,7 +67,7 @@ gfortran -O2 -o raytrace schwarzschild_physics.f95 camera.f95 disk.f95 DP54.f95 
 
 ### Linux (gfortran)
 
-**NOTE!** I have not tested this on linux.
+**Note**: not yet tested on Linux.
 
 1. Install gfortran:
 ```bash
@@ -118,7 +120,7 @@ This can be opened directly in Preview (macOS) or GIMP.
 ---
 
 ## Example Output
-**Run-Time** Depending on your hardware this can take a few minuits to run. There is currently no print out to tell you how far the program has gotten (This will be added).
+**Run-Time** Depending on your hardware this can take a few minutes to run. There is currently no progress output to tell you how far the program has gotten (This will be added).
 So just give it some time.
 ![r_obs set to 150 with adjusted colouring](Images/Unknown.png)
 **r_obs set to 150 with adjusted colouring**
