@@ -118,18 +118,18 @@ cd ~/Downloads
 ```bash
 chmod +x ./raytrace
 ```
-If you skip this step, macOS may treat the file as a regular document and won’t let it run.
+   If you skip this step, macOS may treat the file as a regular document and won’t let it run.
 
 4. Run it:
 
-**Option A**: Double-click `raytrace` in Finder (this may open/run via Terminal depending on your macOS settings).
+   **Option A**: Double-click `raytrace` in Finder (this may open/run via Terminal depending on your macOS settings).
 
-**Option B**: (Terminal):
+   **Option B**: (Terminal):
 ```bash
 ./raytrace
 ```
 
-If macOS blocks it because it was downloaded from the internet:
+   If macOS blocks it because it was downloaded from the internet:
 ```bash
 xattr -d com.apple.quarantine ./raytrace
 ```
