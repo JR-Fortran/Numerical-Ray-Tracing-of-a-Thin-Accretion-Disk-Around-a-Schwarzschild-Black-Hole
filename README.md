@@ -156,6 +156,7 @@ This can be opened directly in Preview (macOS) or GIMP.
 | `schwarzschild_physics.f95` | Hamiltonian equations of motion |
 | `disk.f95` | Equatorial plane crossing detection and refinement |
 | `DP54.f95` | Adaptive Dormand–Prince RK5(4) integrator |
+| `Utils.f95` | Utilities for user input |
 | `Documentation.pdf` | Technical write-up of the physics and implementation |
 
 ---
