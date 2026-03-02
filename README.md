@@ -102,6 +102,41 @@ gfortran -O2 -o raytrace schwarzschild_physics.f95 camera.f95 disk.f95 DP54.f95 
 ./raytrace
 ```
 
+### Alternatively you can use the pre-compiled executables in the executables folder.
+
+### macOS
+
+1. Open the terminal.
+
+2. `cd` into the folder that contains `raytrace` (example for Downloads):
+```bash
+cd ~/Downloads
+```
+
+3. Mark it as executable:
+```bash
+chmod +x ./raytrace
+```
+If you skip this step, macOS may treat the file as a regular document and won’t let it run.
+
+4. Run it:
+**Option A**: Double-click `raytrace` in Finder (this may open/run via Terminal depending on your macOS settings).
+
+**Option B**: (Terminal):
+```bash
+./raytrace
+```
+
+If macOS blocks it because it was downloaded from the internet:
+```bash
+xattr -d com.apple.quarantine ./raytrace
+```
+
+### Windows
+
+Simply double click the `raytrace.exe`
+If Windows shows a SmartScreen warning, click **More info** → **Run anyway** (or right-click → **Properties** → **Unblock**, if shown).
+
 ### Output
 
 The renderer writes `disk.ppm` (binary P6 PPM) to the working directory.
