@@ -40,7 +40,7 @@ These are the ones you'll likely tweak first:
 - `phi_deg` — camera azimuth (rotation around the black hole)
 
 These two variables are set in the main.f95 file:
-**| Parameter | Description | Default |**
+| Parameter | Description | Default |
 |-----------|-------------|---------|
 | `rtol`, `atol` | Integrator tolerances | 1e-9, 1e-12 |
 
