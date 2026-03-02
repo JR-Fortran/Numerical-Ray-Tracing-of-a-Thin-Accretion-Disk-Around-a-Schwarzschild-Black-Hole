@@ -118,7 +118,7 @@ cd ~/Downloads
 ```bash
 chmod +x ./raytrace
 ```
-   If you skip this step, macOS may treat the file as a regular document and won’t let it run.
+   **Note**: If you skip this step, macOS may treat the file as a regular document and won’t let it run.
 
 4. Run it:
 
@@ -129,7 +129,7 @@ chmod +x ./raytrace
 ./raytrace
 ```
 
-   If macOS blocks it because it was downloaded from the internet:
+   **Note**: If macOS blocks it because it was downloaded from the internet:
 ```bash
 xattr -d com.apple.quarantine ./raytrace
 ```
