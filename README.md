@@ -23,14 +23,13 @@ For a full technical write-up of the physics and implementation, see Documentati
 
 ## Key Parameters
 
-These are set in `main.f95`:
+The software asks the user to input these:
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `nx`, `ny` | Output resolution (width × height) | 2880 × 1864 |
 | `r_obs` | Observer radius in units of M | 150 |
 | `fovx_deg` | Horizontal field of view (degrees) | 40 |
-| `rtol`, `atol` | Integrator tolerances | 1e-9, 1e-12 |
 
 These are the ones you'll likely tweak first:
 
@@ -39,6 +38,10 @@ These are the ones you'll likely tweak first:
 
 ![Changing phi_deg rotates the view](Images/Phi.png)
 - `phi_deg` — camera azimuth (rotation around the black hole)
+
+These two variables are set in the main.f95 file:
+**| Parameter | Description | Default |**
+| `rtol`, `atol` | Integrator tolerances | 1e-9, 1e-12 |
 
 ---
 
