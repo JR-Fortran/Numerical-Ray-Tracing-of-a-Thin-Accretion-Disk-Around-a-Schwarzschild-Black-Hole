@@ -23,7 +23,7 @@ For a full technical write-up of the physics and implementation, see Documentati
 
 ## Key Parameters
 
-The software asks the user to input these:
+The software asks the user to input these variables:
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
@@ -41,6 +41,7 @@ These are the ones you'll likely tweak first:
 
 These two variables are set in the main.f95 file:
 **| Parameter | Description | Default |**
+|-----------|-------------|---------|
 | `rtol`, `atol` | Integrator tolerances | 1e-9, 1e-12 |
 
 ---
