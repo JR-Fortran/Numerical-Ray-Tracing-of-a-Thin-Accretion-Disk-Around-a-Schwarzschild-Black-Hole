@@ -121,6 +121,7 @@ chmod +x ./raytrace
 If you skip this step, macOS may treat the file as a regular document and won’t let it run.
 
 4. Run it:
+
 **Option A**: Double-click `raytrace` in Finder (this may open/run via Terminal depending on your macOS settings).
 
 **Option B**: (Terminal):
