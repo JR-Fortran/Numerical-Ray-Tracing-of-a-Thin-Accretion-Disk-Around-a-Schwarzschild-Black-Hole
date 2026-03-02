@@ -61,7 +61,8 @@ CONTAINS
         end if
 
         ! Asking the user if they want to use the default field of view and distance
-        write(*,'(A)', ADVANCE='NO') "Do you want to use the default field of view and distance? (fovx_deg = 40, r_obs = 150) (y/n): "
+        write(*,'(A)', ADVANCE='NO') "Do you want to use the default field of view and distance?" //&
+                                        "(fovx_deg = 40, r_obs = 150) (y/n): "
         read(*,*) answer
         if (answer == 'y') then
             fovx_deg = 40.0_wp            ! Default field of view edit these if you want to change the default
