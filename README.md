@@ -101,8 +101,9 @@ gfortran -O2 -o raytrace schwarzschild_physics.f95 camera.f95 disk.f95 DP54.f95 
 ```bash
 ./raytrace
 ```
+---
 
-### Alternatively you can use the pre-compiled executables in the executables folder.
+## Alternatively you can use the pre-compiled executables in the executables folder.
 
 ### macOS
 
