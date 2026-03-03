@@ -252,6 +252,7 @@ contains
       use schwarzschild_physics, only: rhs_schwarzschild
       use camera, only: camera_make_ray
       use disk, only: disk_crossing, disk_refine_hit
+      use Plancks_law_mod, only: plancks_law
       implicit none
 
       integer, intent(in) :: nx, ny
@@ -300,12 +301,24 @@ contains
       logical :: captured, escaped
 
       ! Images (store for global tone mapping)
-      real(wp), allocatable :: Limg(:,:), Timg(:,:)
-      real(wp) :: Lmax, Tmax, L, T, tnorm, lum, expo, gam
+      real(wp), allocatable :: Limg(:,:), gimg(:,:), Temg(:,:)
+      real(wp) :: Lmax, L, lum, expo, gam
       real(wp) :: rcol, gcol, bcol
-      integer :: ir, ig, ib
       integer(int8) :: rgb(3)
       character(len=:), allocatable :: header
+
+      ! variables for Planck's law
+      real(wp), parameter :: c_light = 2.99792458e8_wp
+      real(wp), parameter :: lamR = 700.0e-9_wp, lamG = 546.0e-9_wp, lamB = 435.0e-9_wp
+      real(wp), parameter :: nuR = c_light/lamR, nuG = c_light/lamG, nuB = c_light/lamB
+      real(wp), parameter :: T0  = 9000.0_wp
+      real(wp), parameter :: I_em_max = 2.622813863194299e-4_wp  ! max of your I_em shape
+
+      real(wp) :: T_em
+      integer :: ir, ig, ib
+      real(wp) :: I_R, I_G, I_B, den
+      real(wp) :: gp
+
 
       theta0 = theta_deg * pi/180.0_wp
       phi0   = phi_deg   * pi/180.0_wp
@@ -316,9 +329,11 @@ contains
       gam = 2.2_wp
       if (present(gamma_out)) gam = gamma_out
 
-      allocate(Limg(nx,ny), Timg(nx,ny))
+      allocate(Limg(nx, ny), gimg(nx, ny), Temg(nx, ny))
       Limg = 0.0_wp
-      Timg = 0.0_wp
+      gimg = 0.0_wp
+      Temg = 0.0_wp
+
 
       ! Parallel loop, the variables below are private to each thread to avoid race conditions, and threads overwriting each other's values.
       !$omp parallel do collapse(2) schedule(dynamic) &
@@ -326,7 +341,7 @@ contains
       !$omp        yt, k1, k2, k3, k4, k5, k6, k7, y4, y5, sc, e, err, lam_hit, y_hit, h_acc, &
       !$omp        hit_plane, r_hit, phi_hit, s_hit, I_em, g, Omega, A, v, gamma, cospsi, &
       !$omp        pt_cov, pphi_cov, pt_con, pphi_con, p_that, p_phihat, &
-      !$omp        captured, escaped, L, T, step)
+      !$omp        captured, escaped, L, T_em, step)
       do j = 1, ny
         do i = 1, nx
 
@@ -342,7 +357,8 @@ contains
           captured = .false.
           escaped  = .false.
           L = 0.0_wp
-          T = 0.0_wp
+          g = 0.0_wp
+          T_em = 0.0_wp
 
           do step = 1, max_steps
 
@@ -396,13 +412,9 @@ contains
 
                   g = sqrt(A) / (gamma * (1.0_wp - v*cospsi))
 
+                  T_em = T0 * (max(0.0_wp, I_em) / I_em_max)**0.25_wp
+
                   L = max(0.0_wp, I_em * g**4)
-
-                  ! local emission temperature proxy
-                  T = max(0.0_wp, I_em)**0.25_wp
-
-                  ! observed colour temperature (spectral shift)
-                  T = g * T
 
                   exit
                 end if
@@ -420,15 +432,15 @@ contains
 
           end do
 
+          Temg(i,j) = T_em
+          gimg(i,j) = g
           Limg(i,j) = L
-          Timg(i,j) = T
 
         end do
       end do
       !$omp end parallel do
 
       Lmax = maxval(Limg); if (Lmax <= 0.0_wp) Lmax = 1.0_wp
-      Tmax = maxval(Timg); if (Tmax <= 0.0_wp) Tmax = 1.0_wp
 
       ! Write binary PPM (P6)
       open(newunit=unit, file=outname, status="replace", access="stream", form="unformatted", action="write")
@@ -438,30 +450,43 @@ contains
       do j = 1, ny
         do i = 1, nx
 
-          if (Limg(i,j) <= 0.0_wp) then
-            rgb = 0_int8
-          else
-            tnorm = Timg(i,j) / Tmax
-            tnorm = max(0.0_wp, min(1.0_wp, tnorm))
+            if (Limg(i,j) <= 0.0_wp .or. gimg(i,j) <= 1.0e-12_wp .or. Temg(i,j) <= 0.0_wp) then
+                rgb = 0_int8
+            else
+                gp = gimg(i,j)
 
-            call temp_gradient(tnorm, rcol, gcol, bcol)
+                I_R = gp**3 * plancks_law(nuR/gp, Temg(i,j))
+                I_G = gp**3 * plancks_law(nuG/gp, Temg(i,j))
+                I_B = gp**3 * plancks_law(nuB/gp, Temg(i,j))
 
-            lum = expo * (Limg(i,j) / Lmax)
-            lum = max(0.0_wp, min(1.0_wp, lum))
-            lum = lum**(1.0_wp/gam)
+                den = max(I_R, max(I_G, I_B))
+                if (den > 0.0_wp) then
+                    rcol = I_R / den
+                    gcol = I_G / den
+                    bcol = I_B / den
+                else
+                    rcol = 0.0_wp
+                    gcol = 0.0_wp
+                    bcol = 0.0_wp
+                end if
 
-            rcol = rcol * lum
-            gcol = gcol * lum
-            bcol = bcol * lum
+                lum = expo * (Limg(i,j) / Lmax)
+                lum = max(0.0_wp, min(1.0_wp, lum))
+                lum = lum**(1.0_wp/gam)
 
-            ir = int(255.0_wp * max(0.0_wp, min(1.0_wp, rcol)) + 0.5_wp)
-            ig = int(255.0_wp * max(0.0_wp, min(1.0_wp, gcol)) + 0.5_wp)
-            ib = int(255.0_wp * max(0.0_wp, min(1.0_wp, bcol)) + 0.5_wp)
+                rcol = rcol * lum
+                gcol = gcol * lum
+                bcol = bcol * lum
 
-            rgb(1) = int(ir, int8)
-            rgb(2) = int(ig, int8)
-            rgb(3) = int(ib, int8)
-          end if
+                ir = int(255.0_wp * max(0.0_wp, min(1.0_wp, rcol)) + 0.5_wp)
+                ig = int(255.0_wp * max(0.0_wp, min(1.0_wp, gcol)) + 0.5_wp)
+                ib = int(255.0_wp * max(0.0_wp, min(1.0_wp, bcol)) + 0.5_wp)
+
+                rgb(1) = int(ir, int8)
+                rgb(2) = int(ig, int8)
+                rgb(3) = int(ib, int8)
+
+            end if
 
           write(unit) rgb
 
@@ -481,34 +506,4 @@ contains
         s = trim(buf)
       end function itoa
 
-      pure subroutine temp_gradient(t, r, g, b)
-        real(wp), intent(in)  :: t
-        real(wp), intent(out) :: r, g, b
-        real(wp) :: u
-
-        ! Cool (redshifted, outer) -> hot (blueshifted, inner)
-        ! t=0: deep red, t=0.5: orange/yellow, t=1: blue-white
-        if (t < 0.33_wp) then
-          ! deep red -> orange
-          u = t / 0.33_wp
-          r = 0.6_wp + 0.4_wp*u
-          g = 0.05_wp*u
-          b = 0.0_wp
-        else if (t < 0.66_wp) then
-          ! orange -> yellow-white
-          u = (t - 0.33_wp) / 0.33_wp
-          r = 1.0_wp
-          g = 0.05_wp + 0.75_wp*u
-          b = 0.2_wp*u
-        else
-          ! yellow-white -> blue
-          u = (t - 0.66_wp) / 0.34_wp
-          r = (1.0_wp - u)*1.0_wp + u*0.3_wp
-          g = (1.0_wp - u)*0.8_wp + u*0.5_wp
-          b = (1.0_wp - u)*0.2_wp + u*1.0_wp
-        end if
-      end subroutine temp_gradient
-
     end subroutine render_shadow_ppm
-
-END MODULE render_shadow
