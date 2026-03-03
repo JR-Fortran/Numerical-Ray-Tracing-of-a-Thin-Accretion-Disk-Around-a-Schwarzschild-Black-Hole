@@ -24,7 +24,7 @@ CONTAINS
     end if
 
     x = (h * nu) / (k_B * T)
-    B = (2.0_wp * h * (nu * nu * nu) / (c * c)) * (1 / (exp(x) - 1.0_wp))
+    B = (2.0_wp * h * (nu * nu * nu) / (c * c)) * (1.0_wp / (exp(x) - 1.0_wp))
 
   end function plancks_law
 
