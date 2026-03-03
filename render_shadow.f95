@@ -507,3 +507,5 @@ contains
       end function itoa
 
     end subroutine render_shadow_ppm
+
+END MODULE render_shadow
