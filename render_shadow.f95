@@ -320,6 +320,13 @@ contains
       Limg = 0.0_wp
       Timg = 0.0_wp
 
+      ! Parallel loop, the variables below are private to each thread to avoid race conditions, and threads overwriting each other's values.
+      !$omp parallel do collapse(2) schedule(dynamic) &
+      !$omp private(i, j, y0, y, y_prev, lam, h, h_new, have_fsal, k_fsal, &
+      !$omp        yt, k1, k2, k3, k4, k5, k6, k7, y4, y5, sc, e, err, lam_hit, y_hit, h_acc, &
+      !$omp        hit_plane, r_hit, phi_hit, s_hit, I_em, g, Omega, A, v, gamma, cospsi, &
+      !$omp        pt_cov, pphi_cov, pt_con, pphi_con, p_that, p_phihat, &
+      !$omp        captured, escaped, L, T, step)
       do j = 1, ny
         do i = 1, nx
 
@@ -418,6 +425,7 @@ contains
 
         end do
       end do
+      !$omp end parallel do
 
       Lmax = maxval(Limg); if (Lmax <= 0.0_wp) Lmax = 1.0_wp
       Tmax = maxval(Timg); if (Tmax <= 0.0_wp) Tmax = 1.0_wp
