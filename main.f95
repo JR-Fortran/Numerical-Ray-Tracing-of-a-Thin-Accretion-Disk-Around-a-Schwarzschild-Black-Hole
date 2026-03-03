@@ -25,16 +25,16 @@ PROGRAM main
   !character(len=*), parameter :: filename = "disk.csv"
   character(len=*), parameter :: filename = "disk.ppm"
 
-  real(wp) :: r_obs, theta_deg, phi_deg, fovx_deg
+  real(wp) :: r_obs, theta_deg, phi_deg, fovx_deg, T0
   real(wp) :: rtol, atol
 
 
-  call read_user_input(nx, ny, r_obs, theta_deg, phi_deg, fovx_deg)
+  call read_user_input(nx, ny, r_obs, theta_deg, phi_deg, fovx_deg, T0)
 
   rtol = 1e-9_wp
   atol = 1e-12_wp
 
   !call render_shadow_csv(nx, ny, filename, r_obs, theta_deg, phi_deg, fovx_deg, rtol, atol)
-  call render_shadow_ppm(nx, ny, filename, r_obs, theta_deg, phi_deg, fovx_deg, rtol, atol, &
+  call render_shadow_ppm(nx, ny, filename, r_obs, theta_deg, phi_deg, fovx_deg, rtol, atol, T0, &
                          exposure=2.0_wp, gamma_out=2.2_wp)
 END PROGRAM main
