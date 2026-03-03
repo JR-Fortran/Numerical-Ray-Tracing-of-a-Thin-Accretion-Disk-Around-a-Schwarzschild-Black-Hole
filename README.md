@@ -165,13 +165,13 @@ This can be opened directly in Preview (macOS) or GIMP.
 ## Example Output
 **Run-Time** Depending on your hardware this can take a few minutes to run. There is currently no progress output to tell you how far the program has gotten (This will be added).
 So just give it some time. The highest resolution tried is 15,360 x 8,640.
-![r_obs set to 150 with adjusted colouring](Images/Disk_150_9000)
+![r_obs set to 150 with adjusted colouring](Images/Disk_150_9000.png)
 **Figure 1**: Resolution: 4K, r_obs = 150, Temperature = 9000
-![r_obs set to 80 ](Images/Disk_80_9000)
+![r_obs set to 80 ](Images/Disk_80_9000.png)
 **Figure 2**: Resolution: 4K, r_obs = 80, Temperature = 9000
-![r_obs set to 150 with adjusted colouring](Images/Disk_150_6000)
+![r_obs set to 150 with adjusted colouring](Images/Disk_150_6000.png)
 **Figure 2**: Resolution: 4K, r_obs = 150, Temperature = 6000
-![r_obs set to 150 with adjusted colouring](Images/Disk_150_12000)
+![r_obs set to 150 with adjusted colouring](Images/Disk_150_12000.png)
 **Figure 2**: Resolution: 4K, r_obs = 150, Temperature = 12000
 
 **If you generate multiple images you can stitch them together into a GIF.**
