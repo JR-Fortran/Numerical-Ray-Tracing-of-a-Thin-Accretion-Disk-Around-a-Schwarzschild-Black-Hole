@@ -30,6 +30,7 @@ The software asks the user to input these variables:
 | `nx`, `ny` | Output resolution (width × height) | 2880 × 1864 |
 | `r_obs` | Observer radius in units of M | 150 |
 | `fovx_deg` | Horizontal field of view (degrees) | 40 |
+| `T0` | Temperature of Accretion disc | 9000 K |
 
 These are the ones you'll likely tweak first:
 
