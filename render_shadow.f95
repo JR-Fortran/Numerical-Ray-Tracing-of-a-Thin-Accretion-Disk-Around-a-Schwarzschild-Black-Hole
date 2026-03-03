@@ -246,7 +246,7 @@ contains
   !   gamma_out  : output gamma for tone mapping (default 2.2)
   ! -----------------------------------------------------------------------------
 
-  subroutine render_shadow_ppm(nx, ny, outname, r_obs, theta_deg, phi_deg, fovx_deg, rtol, atol, exposure, gamma_out)
+  subroutine render_shadow_ppm(nx, ny, outname, r_obs, theta_deg, phi_deg, fovx_deg, rtol, atol, T0, exposure, gamma_out)
       use, intrinsic :: iso_fortran_env, only: wp => real64, int8
       use DP54, only: DP54_try_step
       use schwarzschild_physics, only: rhs_schwarzschild
@@ -258,8 +258,9 @@ contains
       integer, intent(in) :: nx, ny
       character(len=*), intent(in) :: outname
       real(wp), intent(in) :: r_obs, theta_deg, phi_deg, fovx_deg
-      real(wp), intent(in) :: rtol, atol
+      real(wp), intent(in) :: rtol, atol, T0
       real(wp), intent(in), optional :: exposure, gamma_out
+
 
       integer, parameter :: nvar = 8
       integer :: i, j, unit, step
@@ -311,7 +312,6 @@ contains
       real(wp), parameter :: c_light = 2.99792458e8_wp
       real(wp), parameter :: lamR = 700.0e-9_wp, lamG = 546.0e-9_wp, lamB = 435.0e-9_wp
       real(wp), parameter :: nuR = c_light/lamR, nuG = c_light/lamG, nuB = c_light/lamB
-      real(wp), parameter :: T0  = 9000.0_wp
       real(wp), parameter :: I_em_max = 2.622813863194299e-4_wp  ! max of your I_em shape
 
       real(wp) :: T_em
