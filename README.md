@@ -61,7 +61,7 @@ brew install gcc
 
 2. Compile:
 ```bash
-gfortran -O2 -o raytrace schwarzschild_physics.f95 camera.f95 disk.f95 DP54.f95 render_shadow.f95 utils.f95 main.f95
+gfortran -O2 -fopenmp -std=f2008 DP54.f95 schwarzschild_physics.f95 camera.f95 disk.f95 render_shadow.f95 utils.f95 main.f95 -o raytrace
 ```
 
 3. Run:
@@ -94,7 +94,7 @@ pacman -S mingw-w64-x86_64-gcc-fortran
 
 3. Compile:
 ```bash
-gfortran -O2 -o raytrace schwarzschild_physics.f95 camera.f95 disk.f95 DP54.f95 render_shadow.f95 utils.f95 main.f95
+gfortran -O2 -fopenmp -std=f2008 -o raytrace schwarzschild_physics.f95 camera.f95 disk.f95 DP54.f95 render_shadow.f95 utils.f95 main.f95
 ```
 
 4. Run:
