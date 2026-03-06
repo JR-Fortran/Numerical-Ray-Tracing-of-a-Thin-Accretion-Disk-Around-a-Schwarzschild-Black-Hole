@@ -29,197 +29,9 @@ MODULE render_shadow
   implicit none
 
   private
-  public :: render_shadow_csv, render_shadow_ppm
+  public :: render_shadow_ppm
 
 contains
-
-! -----------------------------------------------------------------------------
-! render_shadow_csv
-!
-! Render an image by ray tracing and write per-pixel brightness to CSV.
-!
-! For each pixel:
-!   1) camera_make_ray(...) gives initial state y0 at the observer.
-!   2) Integrate dy/dλ = rhs_schwarzschild with DP54_try_step.
-!   3) Detect equatorial-plane crossing between accepted steps (disk_crossing).
-!   4) If crossing radius r_hit is within [r_in, r_out], compute brightness:
-!        I_em : local emissivity
-!        g    : frequency-shift factor (Doppler + gravitational)
-!        pix  : observed brightness proxy = I_em * g^4
-!
-! Notes on key variables:
-!   lam        : affine parameter λ (integration parameter)
-!   h, h_new   : current and suggested next step size in λ
-!   y_prev     : last accepted state (used for plane-crossing interpolation)
-!   hit_plane  : true if theta crossed pi/2 between y_prev and y
-!   r_hit      : interpolated crossing radius
-!   phi_hit    : interpolated crossing azimuth (with unwrap)
-!
-! Doppler / redshift terms:
-!   A      = 1 - 2/r_hit
-!   Omega  = -1 / r^(3/2)      (Keplerian angular velocity; sign sets rotation sense)
-!   v      = (r*Omega)/sqrt(A) (orbital speed measured by static observer)
-!   gamma  = 1/sqrt(1-v^2)
-!   cospsi : photon direction cosine relative to disk motion in local static frame
-!   g      = sqrt(A) / (gamma * (1 - v*cospsi))
-!
-! Output:
-!   CSV with ny rows and nx columns (comma-separated floats).
-! -----------------------------------------------------------------------------
-
-  subroutine render_shadow_csv(nx, ny, outname, r_obs, theta_deg, phi_deg, fovx_deg, rtol, atol)
-    integer, intent(in) :: nx, ny
-    character(len=*), intent(in) :: outname
-    real(wp), intent(in) :: r_obs, theta_deg, phi_deg, fovx_deg
-    real(wp), intent(in) :: rtol, atol
-
-    integer, parameter :: nvar = 8
-    integer :: i, j, unit, step
-    real(wp), parameter :: pi = acos(-1.0_wp)
-
-    ! Camera angles (radians)
-    real(wp) :: theta0, phi0
-
-    ! Integrator
-    real(wp) :: lam, h, h_new
-    logical :: accepted, have_fsal
-
-    ! Ray state and work arrays
-    real(wp) :: y(nvar), y0(nvar), y_prev(nvar), y5(nvar), y4(nvar), yt(nvar)
-    real(wp) :: k_fsal(nvar), k1(nvar),k2(nvar),k3(nvar),k4(nvar),k5(nvar),k6(nvar),k7(nvar)
-    real(wp) :: sc(nvar), e(nvar), err
-
-    ! Disk intersection
-    logical :: hit_plane, hit_disk
-    real(wp) :: r_hit, phi_hit, s_hit
-    real(wp), parameter :: r_in  = 6.0_wp
-    real(wp), parameter :: r_out = 100.0_wp
-
-    ! Brightness
-    real(wp) :: pix, I_em, g, nu_em, E_inf
-    real(wp) :: u_t, u_phi, Omega
-
-    ! Stop conditions
-    real(wp), parameter :: eps_hor = 1e-6_wp
-    real(wp) :: r_escape
-    real(wp), parameter :: r_guard = 2.2_wp
-    integer, parameter :: max_steps = 200000
-    logical :: captured, escaped
-
-    real(wp) :: A, v, gamma, cospsi
-    real(wp) :: pt_cov, pphi_cov
-    real(wp) :: pt_con, pphi_con
-    real(wp) :: p_that, p_phihat
-
-    theta0 = theta_deg * pi/180.0_wp
-    phi0   = phi_deg   * pi/180.0_wp
-
-    ! Make escape radius scale with observer distance (helps when you move r_obs around)
-    r_escape = max(200.0_wp, 2.0_wp*r_obs)
-
-    open(newunit=unit, file=outname, status="replace", action="write")
-
-    do j = 1, ny
-      do i = 1, nx
-
-        call camera_make_ray(i, j, nx, ny, r_obs, theta0, phi0, fovx_deg, y0)
-
-        y = y0
-        y_prev = y0
-        lam = 0.0_wp
-        h = 0.5_wp
-        have_fsal = .false.
-        k_fsal = 0.0_wp
-
-        captured = .false.
-        escaped = .false.
-        hit_disk = .false.
-        pix = 0.0_wp
-
-        do step = 1, max_steps
-
-          if (y(2) <= 2.0_wp + eps_hor) then
-            captured = .true.
-            exit
-          end if
-          if (y(2) >= r_escape) then
-            escaped = .true.
-            exit
-          end if
-
-          if (y(2) < r_guard) h = min(h, 1e-3_wp)
-
-          call DP54_try_step(rhs_schwarzschild, lam, y, h, rtol, atol, &
-                             have_fsal, k_fsal, yt, &
-                             k1,k2,k3,k4,k5,k6,k7, &
-                             y5,y4, sc,e, err, h_new, accepted)
-
-          if (accepted) then
-            lam = lam + h
-            h = h_new
-
-            call disk_crossing(y_prev, y, hit_plane, r_hit, phi_hit, s_hit)
-            if (hit_plane) then
-              if (r_hit >= r_in .and. r_hit <= r_out) then
-                ! emitted brightness model (placeholder)
-                I_em = (1.0_wp/r_hit**3) * (1.0_wp - sqrt(6.0_wp/r_hit))
-
-                A = 1.0_wp - 2.0_wp/r_hit
-
-                pt_cov   = y(5)
-                pphi_cov = y(8)
-
-                ! contravariant components
-                pt_con   = (-1.0_wp/A) * pt_cov
-                pphi_con = (1.0_wp/(r_hit*r_hit)) * pphi_cov
-
-                ! static orthonormal frame components
-                p_that   = sqrt(A) * pt_con
-                p_phihat = r_hit * pphi_con
-
-                cospsi = p_phihat / p_that
-
-                Omega = -1.0_wp / (r_hit**1.5_wp)
-                v = (r_hit * Omega) / sqrt(A)
-
-                if (v >= 1.0_wp) v = 0.999999_wp
-                gamma = 1.0_wp / sqrt(1.0_wp - v*v)
-
-                g = sqrt(A) / (gamma * (1.0_wp - v*cospsi))
-
-                pix = I_em * g**4
-                hit_disk = .true.
-                exit
-              end if
-            end if
-
-            y_prev = y
-          else
-            h = h_new
-          end if
-
-          h = min(h, 5.0_wp)
-          if (h < 1e-12_wp) then
-            captured = .true.
-            exit
-          end if
-
-        end do
-
-        ! Write brightness (float). No hit => 0.
-        if (i < nx) then
-          write(unit, "(ES16.8,A)", advance="no") pix, ","
-        else
-          write(unit, "(ES16.8)") pix
-        end if
-
-      end do
-    end do
-
-    close(unit)
-    print *, "Wrote ", trim(outname)
-
-  end subroutine render_shadow_csv
 
   ! -----------------------------------------------------------------------------
   ! render_shadow_ppm
@@ -250,6 +62,7 @@ contains
       use, intrinsic :: iso_fortran_env, only: wp => real64, int8
       use DP54, only: DP54_try_step
       use schwarzschild_physics, only: rhs_schwarzschild
+      use kerr_newman_physics, only: rhs_kerr_newman, M, a, Q
       use camera, only: camera_make_ray
       use disk, only: disk_crossing, disk_refine_hit
       use Plancks_law_mod, only: plancks_law
@@ -284,22 +97,30 @@ contains
       ! Disk hit
       logical :: hit_plane
       real(wp) :: r_hit, phi_hit, s_hit
-      real(wp), parameter :: r_in  = 6.0_wp
+      real(wp) :: r_in
       real(wp), parameter :: r_out = 300.0_wp
+      logical, parameter :: prograde_disk = .false.
 
       ! Brightness / Doppler
       real(wp) :: I_em, g, Omega
-      real(wp) :: A, v, gamma, cospsi
+      real(wp) :: A_schw, v, gamma, cospsi
       real(wp) :: pt_cov, pphi_cov
       real(wp) :: pt_con, pphi_con
       real(wp) :: p_that, p_phihat
+      real(wp) :: g_tt, g_tphi, g_phiphi
+      real(wp) :: Sigma_eq, Delta, B
+      real(wp) :: ut, uphi, E_inf, E_em
+      real(wp) :: Omega_disk
+      real(wp) :: x
 
       ! Stop conditions
       real(wp), parameter :: eps_hor = 1e-6_wp
       real(wp) :: r_escape
-      real(wp), parameter :: r_guard = 2.2_wp
+      real(wp):: r_guard
       integer, parameter :: max_steps = 200000
       logical :: captured, escaped
+      real(wp) :: r_hor, disc
+
 
       ! Images (store for global tone mapping)
       real(wp), allocatable :: Limg(:,:), gimg(:,:), Temg(:,:)
@@ -319,7 +140,6 @@ contains
       real(wp) :: I_R, I_G, I_B, den
       real(wp) :: gp
 
-
       theta0 = theta_deg * pi/180.0_wp
       phi0   = phi_deg   * pi/180.0_wp
       r_escape = max(200.0_wp, 2.0_wp*r_obs)
@@ -334,14 +154,20 @@ contains
       gimg = 0.0_wp
       Temg = 0.0_wp
 
+      disc = M * M - a * a - Q * Q              ! guard (avoid NaNs if over-extremal)
+      if (disc < 0.0_wp) disc = 0.0_wp
+      r_hor = M + sqrt(disc)                    ! outer horizon radius r_+
+      r_guard = r_hor + 0.2_wp
+      r_in = r_isco_kerr(a)
 
       ! Parallel loop, the variables below are private to each thread to avoid race conditions, and threads overwriting each other's values.
       !$omp parallel do collapse(2) schedule(dynamic) &
       !$omp private(i, j, y0, y, y_prev, lam, h, h_new, have_fsal, k_fsal, &
       !$omp        yt, k1, k2, k3, k4, k5, k6, k7, y4, y5, sc, e, err, lam_hit, y_hit, h_acc, &
-      !$omp        hit_plane, r_hit, phi_hit, s_hit, I_em, g, Omega, A, v, gamma, cospsi, &
+      !$omp        hit_plane, r_hit, phi_hit, s_hit, I_em, g, Omega, A_schw, v, gamma, cospsi, &
       !$omp        pt_cov, pphi_cov, pt_con, pphi_con, p_that, p_phihat, &
-      !$omp        captured, escaped, L, T_em, step)
+      !$omp        captured, escaped, L, T_em, step, &
+      !$omp        g_tt, g_tphi, g_phiphi, Sigma_eq, Delta, B, ut, uphi, E_inf, E_em, Omega_disk, x)
       do j = 1, ny
         do i = 1, nx
 
@@ -362,7 +188,7 @@ contains
 
           do step = 1, max_steps
 
-            if (y(2) <= 2.0_wp + eps_hor) then
+            if (y(2) <= r_hor + eps_hor) then
               captured = .true.; exit
             end if
             if (y(2) >= r_escape) then
@@ -371,7 +197,7 @@ contains
 
             if (y(2) < r_guard) h = min(h, 1e-3_wp)
 
-            call DP54_try_step(rhs_schwarzschild, lam, y, h, rtol, atol, &
+            call DP54_try_step(rhs_kerr_newman, lam, y, h, rtol, atol, &
                                have_fsal, k_fsal, yt, &
                                k1,k2,k3,k4,k5,k6,k7, &
                                y5,y4, sc,e, err, h_new, accepted)
@@ -385,34 +211,58 @@ contains
               if (hit_plane) then
                 if (r_hit >= r_in .and. r_hit <= r_out) then
 
-                  call disk_refine_hit(rhs_schwarzschild, lam-h_acc, y_prev, lam, y, 12, lam_hit, y_hit)
+                  call disk_refine_hit(rhs_kerr_newman, lam-h_acc, y_prev, lam, y, 12, lam_hit, y_hit)
 
                   r_hit   = y_hit(2)
                   phi_hit = y_hit(4)
 
+                  x = max(0.0_wp, 1.0_wp - sqrt(r_in / r_hit))
+
                   pt_cov   = y_hit(5)
                   pphi_cov = y_hit(8)
 
-                  I_em = (1.0_wp/r_hit**3) * (1.0_wp - sqrt(6.0_wp/r_hit))
+                  I_em = x / (r_hit**3)
 
-                  A = 1.0_wp - 2.0_wp/r_hit
+                  ! ------------------------------------------------------------
+                  ! Kerr(-Newman) redshift factor: g = E_inf / E_em
+                  ! using u^mu_em = u^t (1, 0, 0, Omega)
+                  ! and E_em = -p_mu u^mu = -(p_t u^t + p_phi u^phi)
+                  ! ------------------------------------------------------------
 
-                  pt_con   = (-1.0_wp/A) * pt_cov
-                  pphi_con = (1.0_wp/(r_hit*r_hit)) * pphi_cov
+                  ! Covariant metric components at equator (theta = pi/2 so sin^2=1, cos=0)
+                  Sigma_eq = r_hit*r_hit
+                  B        = 2.0_wp*M*r_hit - Q*Q
+                  Delta    = r_hit*r_hit - 2.0_wp*M*r_hit + a*a + Q*Q
 
-                  p_that   = sqrt(A) * pt_con
-                  p_phihat = r_hit * pphi_con
+                  g_tt     = -(1.0_wp - B/Sigma_eq)
+                  g_tphi   = -a * B / Sigma_eq
+                  g_phiphi = ((r_hit*r_hit + a*a)**2 - a*a*Delta) / Sigma_eq
 
-                  cospsi = p_phihat / p_that
+                  ! Disk angular velocity (Kerr geodesic approximation; good first step even if Q=0)
+                  if (prograde_disk) then
+                    Omega_disk =  1.0_wp / (r_hit**1.5_wp + a)
+                  else
+                    Omega_disk = -1.0_wp / (r_hit**1.5_wp - a)
+                  end if
+                  if (.not. prograde_disk) then
+                    if (abs(r_hit**1.5_wp - a) < 1e-6_wp) Omega_disk = 0.0_wp
+                  end if
 
-                  Omega = -1.0_wp / (r_hit**1.5_wp)
-                  v = (r_hit * Omega) / sqrt(A)
-                  if (v >= 1.0_wp) v = 0.999999_wp
-                  gamma = 1.0_wp / sqrt(1.0_wp - v*v)
+                  ! Normalise emitter 4-velocity
+                  ut = 1.0_wp / sqrt( -(g_tt + 2.0_wp*g_tphi*Omega_disk + g_phiphi*Omega_disk*Omega_disk) )
+                  uphi = Omega_disk * ut
 
-                  g = sqrt(A) / (gamma * (1.0_wp - v*cospsi))
+                  ! Conserved energy at infinity and energy measured by emitter
+                  E_inf = -pt_cov
+                  E_em  = -(pt_cov*ut + pphi_cov*uphi)
 
-                  T_em = T0 * (max(0.0_wp, I_em) / I_em_max)**0.25_wp
+                  if (E_em <= 0.0_wp) then
+                    g = 0.0_wp
+                  else
+                    g = E_inf / E_em
+                  end if
+
+                  T_em = T0 * x**0.25_wp / sqrt(r_hit)   ! ~ r^{-1/2} scaling for T
 
                   L = max(0.0_wp, I_em * g**4)
 
@@ -498,7 +348,28 @@ contains
 
     contains
 
-      pure function itoa(n) result(s)
+    pure function r_isco_kerr(a) result(risco)
+      real(wp), intent(in) :: a
+      real(wp) :: risco
+      real(wp) :: aclip, z1, z2, term
+
+      ! Clamp just in case of tiny numerical overshoot
+      aclip = max(-1.0_wp, min(1.0_wp, a))
+
+      z1 = 1.0_wp + (1.0_wp - aclip*aclip)**(1.0_wp/3.0_wp) * &
+                  ( (1.0_wp + aclip)**(1.0_wp/3.0_wp) + (1.0_wp - aclip)**(1.0_wp/3.0_wp) )
+      z2 = sqrt(3.0_wp*aclip*aclip + z1*z1)
+
+      term = sqrt((3.0_wp - z1) * (3.0_wp + z1 + 2.0_wp * z2))
+
+      if (prograde_disk) then
+        risco = 3.0_wp + z2 - term
+      else
+        risco = 3.0_wp + z2 + term
+      end if
+    end function r_isco_kerr
+
+    pure function itoa(n) result(s)
         integer, intent(in) :: n
         character(len=:), allocatable :: s
         character(len=32) :: buf
