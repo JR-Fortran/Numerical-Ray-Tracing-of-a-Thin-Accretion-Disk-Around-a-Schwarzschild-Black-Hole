@@ -1,4 +1,4 @@
-# Numerical Ray Tracing of a Thin Accretion Disk Around a Schwarzschild Black Hole
+# Numerical Ray Tracing of a Thin Accretion Disk Around a Kerr Black Hole
 
 A Fortran implementation of backwards null geodesic ray tracing in Schwarzschild spacetime,
 reproducing the optical appearance of a thin accretion disk in the spirit of Luminet (1979).
@@ -62,7 +62,7 @@ brew install gcc
 
 2. Compile:
 ```bash
-gfortran -O2 -fopenmp -std=f2008 DP54.f95 schwarzschild_physics.f95 camera.f95 disk.f95 Plancks_law.f95 render_shadow.f95 utils.f95 main.f95 -o raytrace
+gfortran -O2 -fopenmp -std=f2008 DP54.f95 kerr_newman_physics.f95 camera.f95 disk.f95 Plancks_law.f95 render_shadow.f95 utils.f95 main.f95 -o raytrace
 ```
 
 3. Run:
@@ -95,7 +95,7 @@ pacman -S mingw-w64-x86_64-gcc-fortran
 
 3. Compile:
 ```bash
-gfortran -O2 -fopenmp -std=f2008 -o raytrace schwarzschild_physics.f95 camera.f95 disk.f95 DP54.f95 Plancks_law.f95 render_shadow.f95 utils.f95 main.f95
+gfortran -O2 -fopenmp -std=f2008 -o raytrace kerr_newman_physics.f95 camera.f95 disk.f95 DP54.f95 Plancks_law.f95 render_shadow.f95 utils.f95 main.f95
 ```
 
 4. Run:
@@ -154,7 +154,7 @@ This can be opened directly in Preview (macOS) or GIMP.
 | `main.f95` | Entry point — sets parameters and calls the renderer |
 | `render_shadow.f95` | High-level ray tracer and image writer |
 | `camera.f95` | Constructs initial null rays at the observer |
-| `schwarzschild_physics.f95` | Hamiltonian equations of motion |
+| `kerr_newman_physics.f95` | Kerr-Newman physics |
 | `disk.f95` | Equatorial plane crossing detection and refinement |
 | `DP54.f95` | Adaptive Dormand–Prince RK5(4) integrator |
 | `Utils.f95` | Utilities for user input |
@@ -165,19 +165,6 @@ This can be opened directly in Preview (macOS) or GIMP.
 
 ## Example Output
 **Run-Time** Depending on your hardware this can take a few minutes to run. There is currently no progress output to tell you how far the program has gotten (This will be added).
-So just give it some time. The highest resolution tried is 15,360 x 8,640.
-![r_obs set to 150 with adjusted colouring](Images/Disk_150_9000.png)
-**Figure 1**: Resolution: 4K, r_obs = 150, Temperature = 9000
-![r_obs set to 80 ](Images/Disk_80_9000.png)
-**Figure 2**: Resolution: 4K, r_obs = 80, Temperature = 9000
-![r_obs set to 150 with adjusted colouring](Images/Disk_150_6000.png)
-**Figure 2**: Resolution: 4K, r_obs = 150, Temperature = 6000
-![r_obs set to 150 with adjusted colouring](Images/Disk_150_12000.png)
-**Figure 2**: Resolution: 4K, r_obs = 150, Temperature = 12000
-
-**If you generate multiple images you can stitch them together into a GIF.**
-![r_obs set to 80 ](Images/output.gif)
-**r_obs set to 80**
 
 ---
 
