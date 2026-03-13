@@ -16,7 +16,7 @@
 MODULE camera
 
     use, intrinsic :: iso_fortran_env, only: wp => real64
-    use schwarzschild_physics, only: A_of_r
+    use kerr_newman_physics, only: M, a_bh => a, Q
 
     IMPLICIT NONE
 
@@ -47,97 +47,129 @@ contains
 !   - The stored momenta are covariant (p_t, p_r, p_theta, p_phi).
 ! -----------------------------------------------------------------------------
 
-    subroutine camera_make_ray(i, j, nx, ny, r_obs, theta, phi, fovx_deg, yt)
+subroutine camera_make_ray(i, j, nx, ny, r_obs, theta, phi, fovx_deg, yt)
         ! Build initial ray state y at the observer for pixel (i,j),
-        ! using horizontal FOV (fovx_deg).
+        ! using a Kerr(-Newman) ZAMO (locally non-rotating) tetrad.
         !
-        ! Output y = [t, r, theta, phi, pt, pr, ptheta, pphi]
+        ! Output yt = [t, r, theta, phi, pt, pr, ptheta, pphi]  (COVARIANT momenta)
         !
-        ! Backwards ray tracing: rays start at camera and go inwards.
         integer, intent(in) :: i, j, nx, ny
         real(wp), intent(in) :: r_obs, theta, phi, fovx_deg
         real(wp), intent(out) :: yt(8)
 
-        real(wp) :: A, sth
+        real(wp), parameter :: pi = acos(-1.0_wp)
+        real(wp) :: sth, cth, sth2
         real(wp) :: fovx, aspect, halfx, halfy
         real(wp) :: u, v, x, y
         real(wp) :: nxh, nyh, nzh, normn
+
+        ! Kerr-Newman helpers
+        real(wp) :: Sigma, Delta, B
+
+        ! Covariant metric components at observer
+        real(wp) :: g_tt, g_rr, g_thth, g_tphi, g_phiphi
+
+        ! ZAMO quantities
+        real(wp) :: alpha, omega
+        real(wp) :: ut, uphi
+
+        ! Orthonormal tetrad spatial scale factors
+        real(wp) :: er, eth, ephi
+
+        ! Photon momentum in orthonormal frame
         real(wp) :: pt_hat, pr_hat, pth_hat, pph_hat
+
+        ! Photon momentum in coordinates (contravariant)
         real(wp) :: pt_con, pr_con, pth_con, pph_con
+
+        ! Photon momentum in coordinates (covariant)
         real(wp) :: pt_cov, pr_cov, pth_cov, pph_cov
 
-        ! 1 Position the observer in Schwarzschild coordinates.
+        ! 1) Position
         yt = 0.0_wp
         yt(1) = 0.0_wp   ! t
         yt(2) = r_obs    ! r
         yt(3) = theta    ! theta
         yt(4) = phi      ! phi
 
-        A = A_of_r(r_obs)
-        sth = sin(theta)
+        sth  = sin(theta)
+        cth  = cos(theta)
+        sth2 = sth*sth
+        sth2 = max(sth2, 1.0e-30_wp)   ! guard at poles
 
-        ! 2 Convert pixel (i, j) to normalized screen coordinates (u, v) in [-1, 1]
-        ! i runs 1 ... nx left -> right, j runs 1 ... ny top -> bottom
+        ! 2) Kerr-Newman metric (covariant) at (r_obs, theta)
+        Sigma = r_obs*r_obs + a_bh*a_bh*cth*cth
+        Delta = r_obs*r_obs - 2.0_wp*M*r_obs + a_bh*a_bh + Q*Q
+        B     = 2.0_wp*M*r_obs - Q*Q
+
+        g_tt   = -(1.0_wp - B/Sigma)
+        g_rr   =  Sigma / Delta
+        g_thth =  Sigma
+        g_tphi = -a_bh * B * sth2 / Sigma
+        g_phiphi = sth2 * ( ((r_obs*r_obs + a_bh*a_bh)**2 - a_bh*a_bh*Delta*sth2) / Sigma )
+
+        ! 3) ZAMO lapse and frame dragging angular velocity
+        ! omega = -g_{tphi}/g_{phiphi}
+        omega = -g_tphi / g_phiphi
+
+        ! alpha = sqrt((g_{tphi}^2 - g_tt*g_phiphi)/g_phiphi)
+        alpha = sqrt( max(0.0_wp, (g_tphi*g_tphi - g_tt*g_phiphi) / g_phiphi ) )
+
+        ! ZAMO 4-velocity: u^mu = (1/alpha, 0, 0, omega/alpha)
+        ut   = 1.0_wp / alpha
+        uphi = omega / alpha
+
+        ! 4) Pixel to camera screen coordinates u,v in [-1,1]
         u = ((real(i,wp) - 0.5_wp) / real(nx,wp)) * 2.0_wp - 1.0_wp
         v = 1.0_wp - ((real(j,wp) - 0.5_wp) / real(ny,wp)) * 2.0_wp
 
-        ! 3 Horizontal FOV in radiants
-        fovx = fovx_deg * acos(-1.0_wp) / 180.0_wp
+        fovx   = fovx_deg * pi / 180.0_wp
         aspect = real(ny,wp) / real(nx,wp)
 
-        ! Half width of the image plane at distance 1 in camera space
         halfx = tan(0.5_wp * fovx)
         halfy = halfx * aspect
 
-        ! 4 Camera space direction before normalisation
-        ! Forward = -rhat (into scene)
-        ! right = +phihat
-        ! up = - thetahat
         x = u * halfx
         y = v * halfy
 
-        ! In the local orthonormal frame (rhat, thetahat, phihat):
-        ! n_hat_r corresponds to forward/back (we choose -1 for forward)
-        ! n_hat_thata corresponds to up/down (we use -thatahat for "up")
-        ! n_hat_phi corresponds to left/right
-        !
-        ! We build n_hat = forward + x * right + y * up
-        nxh = -1.0_wp   ! Along r-hat (forward = -rhat)
-        nyh = -y        ! Along theta-hat (because up is -thatahat)
-        nzh = x         ! along phi-hat
+        ! 5) Build spatial direction in the local orthonormal basis (rhat, thetahat, phihat)
+        ! Forward = -rhat (into scene), right = +phihat, up = -thetahat
+        nxh = -1.0_wp
+        nyh = -y
+        nzh =  x
 
-        normn = sqrt(nxh * nxh + nyh * nyh + nzh * nzh)
+        normn = sqrt(nxh*nxh + nyh*nyh + nzh*nzh)
         nxh = nxh / normn
         nyh = nyh / normn
         nzh = nzh / normn
 
-        ! 5 Local orthonormal photon momentum components
-        ! For a null ray in orthonormal frame p^hat_t = 1, |p^hat_spatial| = 1
-        pt_hat = 1.0_wp
-        pr_hat = nxh
+        ! 6) Null photon momentum in orthonormal frame
+        pt_hat  = 1.0_wp
+        pr_hat  = nxh
         pth_hat = nyh
         pph_hat = nzh
 
-        ! 6 Convert from orthonormal p^hat to coordinates contravariant p^mu
-        ! tetrad for static observer:
-        ! p^t = (1/sqrt(A)) * p^hat_t
-        ! p^r = sqrt(A) * p^hat_r
-        ! p^theta = (1/r) * p^hat_theta
-        ! p^phi = (1/(r sin(θ))) * p^hat_phi
-        pt_con = (1.0_wp/sqrt(A)) * pt_hat
-        pr_con = sqrt(A) * pr_hat
-        pth_con = (1.0_wp/r_obs) * pth_hat
-        pph_con = (1.0_wp/(r_obs * sth)) * pph_hat
+        ! 7) Spatial tetrad scale factors for ZAMO orthonormal basis:
+        ! e_r^mu   = (0, 1/sqrt(g_rr),   0, 0)
+        ! e_th^mu  = (0, 0, 1/sqrt(g_thth), 0)
+        ! e_phi^mu = (0, 0, 0, 1/sqrt(g_phiphi))
+        er   = 1.0_wp / sqrt(g_rr)
+        eth  = 1.0_wp / sqrt(g_thth)
+        ephi = 1.0_wp / sqrt(g_phiphi)
 
-        ! 7 Convert to covariant p_mu = g_muv p^v
-        ! Schwarzschild covariant metric:
-        ! g_tt = -A, g_rr = 1/A, g_tt = r^2, g_phiphi = r^2 sin^2(theta)
-        pt_cov = (-A) * pt_con
-        pr_cov = (1.0_wp/A) * pr_con
-        pth_cov = (r_obs * r_obs) * pth_con
-        pph_cov = (r_obs * r_obs * sth * sth) * pph_con
+        ! 8) Convert tetrad components to coordinate contravariant components:
+        ! p^mu = p^hat_t * u^mu + p^hat_r * e_r^mu + p^hat_th * e_th^mu + p^hat_phi * e_phi^mu
+        pt_con  = pt_hat * ut
+        pr_con  = pr_hat * er
+        pth_con = pth_hat * eth
+        pph_con = pt_hat * uphi + pph_hat * ephi
 
-        ! 8 Store covariant momenta in state vector
+        ! 9) Convert to covariant momenta p_mu = g_{mu nu} p^nu
+        pt_cov  = g_tt * pt_con + g_tphi * pph_con
+        pr_cov  = g_rr * pr_con
+        pth_cov = g_thth * pth_con
+        pph_cov = g_tphi * pt_con + g_phiphi * pph_con
+
         yt(5) = pt_cov
         yt(6) = pr_cov
         yt(7) = pth_cov
