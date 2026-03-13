@@ -25,6 +25,8 @@ Compile:
 gfortran -O3 -march=native  -fopenmp -std=f2008 DP54.f95 utils.f95 kerr_newman_physics.f95 colour_emission.f95 camera.f95 disk.f95 Plancks_law.f95 render_shadow.f95 main.f95 -o raytrace
 ```
 
+**NOTE**: You may need to compile twice, somtimes when downloading the repo from github, it will not compile on the first try and you need to compile it twice.
+
 Run:
 ```bash
 ./raytrace
@@ -42,6 +44,8 @@ Compile:
 ```bash
 gfortran -O3 -march=native -fopenmp -std=f2008 DP54.f95 utils.f95 kerr_newman_physics.f95 colour_emission.f95 camera.f95 disk.f95 Plancks_law.f95 render_shadow.f95 main.f95 -o raytrace.exe
 ```
+
+**NOTE**: You may need to compile twice, somtimes when downloading the repo from github, it will not compile on the first try and you need to compile it twice.
 
 Run:
 ```bash
