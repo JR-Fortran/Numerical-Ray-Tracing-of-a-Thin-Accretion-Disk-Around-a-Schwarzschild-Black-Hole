@@ -23,7 +23,6 @@
 MODULE render_shadow
   use, intrinsic :: iso_fortran_env, only: wp => real64
   use DP54, only: DP54_try_step
-  use schwarzschild_physics, only: rhs_schwarzschild
   use camera, only: camera_make_ray
   use disk, only: disk_crossing
   implicit none
@@ -64,7 +63,6 @@ contains
                                prograde_disk, exposure, gamma_out)
       use, intrinsic :: iso_fortran_env, only: wp => real64
       use DP54, only: DP54_try_step
-      use schwarzschild_physics, only: rhs_schwarzschild
       use kerr_newman_physics, only: rhs_kerr_newman, M, a, Q
       use camera, only: camera_make_ray
       use disk, only: disk_crossing, disk_refine_hit
