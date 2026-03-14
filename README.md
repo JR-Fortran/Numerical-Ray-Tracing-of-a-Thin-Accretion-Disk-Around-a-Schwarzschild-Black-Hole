@@ -1,7 +1,7 @@
+![Figure 2](Images/Figure-2.png)
 # Kerr-Newman Black Hole Ray Tracer
 
 A Fortran project for generating images of a thin accretion disk around a Kerr-Newman black hole.
-![Figure 2](Images/Figure-2.png)
 
 This code is released under the **MIT License**. See [`LICENSE`](LICENSE).
 
